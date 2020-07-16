@@ -5,7 +5,20 @@
 
 #define DATA_MAX_LENGTH 256
 
+static int read_count = 0;
+
 /** Dump the given data to stdout. */
+void dump_temp ( unsigned char* data, int data_length )
+{
+	unsigned char high_byte = data[2];
+	unsigned char low_byte = data[3];
+	int temp = (high_byte << 8) + (low_byte);
+	float fltemp = (float)temp / 100.0;
+//	printf("%02x %02x = %x C = %.2f C\n", data[2], data[3], temp, fltemp);
+	float fltempf = fltemp * 1.8 + 32;
+	printf("%.2f C = %.2f F\n", fltemp, fltempf);
+}
+
 void dump_data( char* name, unsigned char* data, int data_length )
 {
 	printf( "%s (%i bytes):", name, data_length );
@@ -52,7 +65,10 @@ int read_from_device( hid_device *dev, int timeout )
 				"Warning: data buffer full, may have lost some data.\n\n"
 			);
 		}
-		dump_data( "Response from device", read_data, size );
+		read_count++;
+		//dump_data( "Response from device", read_data, size );
+		printf("Sensor %d: ", read_count);
+		dump_temp( read_data, size );
 	}
 	return 0;
 }
@@ -64,13 +80,13 @@ int query_device(
 	hid_device* dev;
 	int size;
 	
-	printf( "Device %s : %04hx:%04hx interface %d : %ls %ls\n\n",
+/*	printf( "Device %s : %04hx:%04hx interface %d : %ls %ls\n\n",
 		info->path,
 		info->vendor_id, info->product_id,
 		info->interface_number,
 		info->manufacturer_string, info->product_string
 	);
-	
+*/	
 	dev = hid_open_path( info->path );
 	if ( !dev )
 	{
@@ -80,9 +96,9 @@ int query_device(
 	
 	int ret = 0;
 	
-	dump_data( "Writing data", write_data, write_length );
+//	dump_data( "Writing data", write_data, write_length );
 	size = hid_write( dev, write_data, write_length );
-	printf( "\n" );
+//	printf( "\n" );
 	if ( size <= 0 )
 	{
 		fprintf( stderr, "Write failed: %ls\n", hid_error( dev ) );
